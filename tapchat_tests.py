@@ -2,11 +2,18 @@ import os
 import tapchat
 import unittest
 import tempfile
+import json
+
+def get_sample_requests():
+    with open('templates/sample_request.json') as sample_file:
+        sample = json.load(sample_file)
+    return json.loads(sample)
 
 class FlaskrTestCase(unittest.TestCase):
 
     def setUp(self):
-        pass
+        tapchat.app.testing = True
+        self.app = tapchat.app.test_client()
 
     def tearDown(self):
         pass
