@@ -7,7 +7,7 @@ import calendar
 app = Flask(__name__)
 
 # Load from template
-def build_reposonse(speech_text, card_title, card_content):
+def build_reponse(speech_text, card_title, card_content):
     with open('templates/default_response.json') as response_file:
         response = json.load(response_file)
 
@@ -42,7 +42,7 @@ def subtract_days(frm, to):
     return gap
 
 def process_request(request_data):
-    response_error = build_reposonse("Sorry, I made an arse of the request",
+    response_error = build_reponse("Sorry, I made an arse of the request",
                            "TapsAff?",
                            "Error getting weather")
     # Decode the request
@@ -73,13 +73,13 @@ def process_request(request_data):
             today = calendar.day_name[date.today().weekday()]
             forecast_n = subtract_days(today, day)
             taps_status = weather["forecast"][forecast_n]["taps"]
-            return build_reposonse("It is currently taps %s in %s on %s" % (taps_status, location, day),
+            return build_reponse("It is currently taps %s in %s on %s" % (taps_status, location, day),
                                    "TapsAff?",
                                    "Card stuff")
         except KeyError:
             # No day specified
             taps_status = weather["taps"]
-            return build_reposonse("It is currently taps %s in %s" % (taps_status, location),
+            return build_reponse("It is currently taps %s in %s" % (taps_status, location),
                                    "TapsAff?",
                                    "Card stuff")
 
