@@ -30,11 +30,12 @@ def get_current_location(device_id, consent_tkn):
         except KeyError:
             return
 
+DAY_N = {  "Monday": 0, "Tuesday": 1, "Wednesday": 2,
+           "Thursday": 3,  "Friday": 4,  "Saturday": 5,
+             "Sunday": 6}
 def subtract_days(frm, to):
-    day_num = {  "Monday": 0, "Tuesday": 1, "Wednesday": 2,
-               "Thursday": 3,  "Friday": 4,  "Saturday": 5,
-                 "Sunday": 6}
-    gap = day_num[to] - day_num[frm]
+
+    gap = DAY_N[to] - DAY_N[frm]
 
     if (gap < 1):
         gap += 7
@@ -73,7 +74,7 @@ def process_request(request_data):
             today = calendar.day_name[date.today().weekday()]
             forecast_n = subtract_days(today, day)
             taps_status = weather["forecast"][forecast_n]["taps"]
-            return build_reponse("It is currently taps %s in %s on %s" % (taps_status, location, day),
+            return build_reponse("It is taps %s in %s on %s" % (taps_status, location, day),
                                    "TapsAff?",
                                    "Card stuff")
         except KeyError:
