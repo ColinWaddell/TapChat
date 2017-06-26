@@ -17,8 +17,18 @@ def build_reposonse(speech_text, card_title, card_content):
 
     return json.dumps(response)
 
-def get_current_location(device_id):
-    url = "https://api.eu.amazonalexa.com/v1/devices/%s/settings/address/countryAndPostalCode" % (device_id, )
+def get_current_location(device_id, consent_tkn):
+    URL = "https://api.eu.amazonalexa.com/v1/devices/%s/settings/address/countryAndPostalCode" % (device_id, )
+    HEADER = {'Accept': 'application/json',
+             'Authorization': 'Bearer {}'.format(consent_tkn)}
+
+    r = requests.get(URL, headers=HEADER)
+    if r.status_code == 200:
+        data = r.json()
+        try:
+            return data["city"]
+        except KeyError:
+            return
 
 def subtract_days(frm, to):
     day_num = {  "Monday": 0, "Tuesday": 1, "Wednesday": 2,
@@ -38,25 +48,26 @@ def process_request(request_data):
     # Decode the request
     try:
         request = json.loads(request_data)
-    except JSONDecodeError:
+    except json.JSONDecodeError:
         return response_error
 
     # Try and grab location
     try:
         location = request["request"]["intent"]["slots"]["Location"]["value"]
     except KeyError:
-        location = ""
-
-    # Try and grab day
-    try:
-        day = request["request"]["intent"]["slots"]["Day"]["value"]
-    except KeyError:
-        # Get default location
-        day = ""
+        try:
+            device_id = request["context"]["System"]["device"]["deviceId"]
+            consent_tkn = request["context"]["System"]["user"]["permissions"]["consentToken"]
+            location = get_current_location(device_id, consent_tkn)
+        except KeyError:
+            # Can't find location
+            return response_error
 
     try:
         weather = GetWeatherData(location)
-        if(day):
+        try:
+            # Try and grab the day
+            day = request["request"]["intent"]["slots"]["Day"]["value"]
             # How far into the forecast array do
             # I need to go?
             today = calendar.day_name[date.today().weekday()]
@@ -65,7 +76,8 @@ def process_request(request_data):
             return build_reposonse("It is currently taps %s in %s on %s" % (taps_status, location, day),
                                    "TapsAff?",
                                    "Card stuff")
-        else:
+        except KeyError:
+            # No day specified
             taps_status = weather["taps"]
             return build_reposonse("It is currently taps %s in %s" % (taps_status, location),
                                    "TapsAff?",
