@@ -1,6 +1,8 @@
 from flask import Flask, request, render_template
 from helpers.weatherdata import GetWeatherData
 import json
+from datetime import date
+import calendar
 
 app = Flask(__name__)
 
@@ -17,6 +19,17 @@ def build_reposonse(speech_text, card_title, card_content):
 
 def get_current_location(device_id):
     url = "https://api.eu.amazonalexa.com/v1/devices/%s/settings/address/countryAndPostalCode" % (device_id, )
+
+def subtract_days(frm, to):
+    day_num = {  "Monday": 0, "Tuesday": 1, "Wednesday": 2,
+               "Thursday": 3,  "Friday": 4,  "Saturday": 5,
+                 "Sunday": 6}
+    gap = day_num[to] - day_num[frm]
+
+    if (gap < 1):
+        gap += 7
+
+    return gap
 
 def process_request(request_data):
     response_error = build_reposonse("Sorry, I made an arse of the request",
@@ -38,6 +51,7 @@ def process_request(request_data):
     try:
         day = request["request"]["intent"]["slots"]["Day"]["value"]
     except KeyError:
+        # Get default location
         day = ""
 
     try:
@@ -45,13 +59,19 @@ def process_request(request_data):
         if(day):
             # How far into the forecast array do
             # I need to go?
+            today = calendar.day_name[date.today().weekday()]
+            forecast_n = subtract_days(today, day)
+            taps_status = weather["forecast"][forecast_n]["taps"]
+            return build_reposonse("It is currently taps %s in %s on %s" % (taps_status, location, day),
+                                   "TapsAff?",
+                                   "Card stuff")
         else:
             taps_status = weather["taps"]
             return build_reposonse("It is currently taps %s in %s" % (taps_status, location),
                                    "TapsAff?",
                                    "Card stuff")
 
-    except KeyError:
+    except (KeyError, IndexError):
         return response_error
 
 # Default request handler
